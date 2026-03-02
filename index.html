@@ -21,6 +21,7 @@
             margin: 0;
             padding: 0;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            -webkit-tap-highlight-color: transparent;
         }
 
         body {
@@ -31,7 +32,6 @@
             min-height: 100vh;
         }
 
-        /* 模擬手機螢幕的容器 */
         .app-container {
             width: 100%;
             max-width: 400px;
@@ -45,7 +45,6 @@
             box-shadow: 0 0 20px rgba(0,0,0,0.5);
         }
 
-        /* 頂部標題區 */
         header {
             padding: 30px 20px 15px;
             text-align: center;
@@ -75,7 +74,6 @@
             margin: 0 10px;
         }
 
-        /* 列表區塊 */
         main {
             flex: 1;
             overflow-y: auto;
@@ -98,7 +96,14 @@
             gap: 12px;
             position: relative;
             overflow: hidden;
-            transition: transform 0.2s, opacity 0.2s;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+            cursor: default;
+        }
+
+        /* 拖曳中的樣式 */
+        .todo-item.dragging {
+            opacity: 0.5;
+            border: 1px dashed var(--accent-gold);
         }
 
         .todo-item.deleting {
@@ -133,6 +138,14 @@
             align-items: center;
             justify-content: center;
             padding: 0;
+        }
+
+        .drag-handle {
+            cursor: grab;
+        }
+
+        .drag-handle:active {
+            cursor: grabbing;
         }
 
         .drag-icon svg {
@@ -214,12 +227,21 @@
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
             z-index: 10;
             background-color: var(--card-bg);
+            cursor: pointer;
+            transition: transform 0.1s ease-out;
+            user-select: none;
+        }
+
+        .avatar-container:active {
+            transform: scale(0.9);
+            box-shadow: 0 0 15px var(--accent-gold);
         }
 
         .avatar-container img {
             width: 100%;
             height: 100%;
             object-fit: cover;
+            pointer-events: none;
         }
 
         footer {
@@ -247,11 +269,12 @@
             justify-content: center;
             align-items: center;
             cursor: pointer;
-            transition: background-color 0.2s;
+            transition: all 0.2s ease;
         }
 
         .nav-btn:active {
             background-color: rgba(223, 179, 107, 0.2);
+            transform: scale(0.92);
         }
 
         .nav-btn svg {
@@ -273,15 +296,32 @@
             border: none;
             padding: 10px;
             cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .nav-arrows button:first-child:active {
+            transform: scale(0.8) translateX(-5px);
+        }
+
+        .nav-arrows button:last-child:active {
+            transform: scale(0.8) translateX(5px);
         }
 
         .nav-arrows svg {
             width: 24px;
             height: 24px;
             stroke: var(--text-muted);
-            stroke-width: 2;
+            stroke-width: 2.5;
             stroke-linecap: round;
             stroke-linejoin: round;
+            transition: stroke 0.2s;
+        }
+
+        .nav-arrows button:active svg {
+            stroke: var(--accent-gold);
         }
 
     </style>
@@ -300,20 +340,18 @@
         <div class="gradient-line"></div>
     </header>
 
-    <main>
+    <main id="main-scroll">
         <div class="todo-list" id="todo-list">
-            <div class="todo-item">
+            <div class="todo-item" draggable="true">
                 <div class="item-actions-left">
-                    <button class="icon-btn drag-icon">
+                    <button class="icon-btn drag-icon drag-handle">
                         <svg viewBox="0 0 24 24">
                             <path d="M4 9h16M4 15h16" fill="none"/>
                         </svg>
                     </button>
                     <div class="check-icon" onclick="toggleCheck(this)"></div>
                 </div>
-                <div class="item-content">
-                    這是預設文字
-                </div>
+                <div class="item-content">這是預設文字</div>
                 <button class="icon-btn delete-btn" onclick="deleteItem(this)">
                     <svg viewBox="0 0 24 24">
                         <path d="M18 6L6 18M6 6l12 12" fill="none"/>
@@ -321,9 +359,9 @@
                 </button>
             </div>
 
-            <div class="todo-item">
+            <div class="todo-item" draggable="true">
                 <div class="item-actions-left">
-                    <button class="icon-btn drag-icon">
+                    <button class="icon-btn drag-icon drag-handle">
                         <svg viewBox="0 0 24 24">
                             <path d="M4 9h16M4 15h16" fill="none"/>
                         </svg>
@@ -337,27 +375,10 @@
                     </svg>
                 </button>
             </div>
-
-            <div class="todo-item">
-                <div class="item-actions-left">
-                    <button class="icon-btn drag-icon">
-                        <svg viewBox="0 0 24 24">
-                            <path d="M4 9h16M4 15h16" fill="none"/>
-                        </svg>
-                    </button>
-                    <div class="check-icon" onclick="toggleCheck(this)"></div>
-                </div>
-                <div class="item-content">歡迎使用本網站</div>
-                <button class="icon-btn delete-btn" onclick="deleteItem(this)">
-                    <svg viewBox="0 0 24 24">
-                        <path d="M18 6L6 18M6 6l12 12" fill="none"/>
-                    </svg>
-                </button>
-            </div>
         </div>
     </main>
 
-    <div class="avatar-container">
+    <div class="avatar-container" onclick="void(0)">
         <img src="assets/avatar.png" alt="Avatar">
     </div>
 
@@ -369,12 +390,12 @@
         </button>
         
         <div class="nav-arrows">
-            <button>
+            <button onclick="void(0)">
                 <svg viewBox="0 0 24 24">
                     <path d="M15 18l-6-6 6-6" fill="none"/>
                 </svg>
             </button>
-            <button>
+            <button onclick="void(0)">
                 <svg viewBox="0 0 24 24">
                     <path d="M9 18l6-6-6-6" fill="none"/>
                 </svg>
@@ -390,9 +411,61 @@
 </div>
 
 <script>
+    const todoList = document.getElementById('todo-list');
+
+    // 拖曳功能實作
+    todoList.addEventListener('dragstart', (e) => {
+        const item = e.target.closest('.todo-item');
+        if (item) {
+            item.classList.add('dragging');
+        }
+    });
+
+    todoList.addEventListener('dragend', (e) => {
+        const item = e.target.closest('.todo-item');
+        if (item) {
+            item.classList.remove('dragging');
+        }
+    });
+
+    todoList.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        const draggingItem = document.querySelector('.dragging');
+        if (!draggingItem) return;
+
+        const afterElement = getDragAfterElement(todoList, e.clientY);
+        if (afterElement == null) {
+            todoList.appendChild(draggingItem);
+        } else {
+            todoList.insertBefore(draggingItem, afterElement);
+        }
+    });
+
+    function getDragAfterElement(container, y) {
+        const draggableElements = [...container.querySelectorAll('.todo-item:not(.dragging)')];
+
+        return draggableElements.reduce((closest, child) => {
+            const box = child.getBoundingClientRect();
+            const offset = y - box.top - box.height / 2;
+            if (offset < 0 && offset > closest.offset) {
+                return { offset: offset, element: child };
+            } else {
+                return closest;
+            }
+        }, { offset: Number.NEGATIVE_INFINITY }).element;
+    }
+
+    // 切換打勾狀態，並在完成時自動移動到最下方
     function toggleCheck(element) {
         const todoItem = element.closest('.todo-item');
         todoItem.classList.toggle('completed');
+        
+        if (todoItem.classList.contains('completed')) {
+            // 延遲一小段時間讓顏色變換動畫執行，再移動位置
+            setTimeout(() => {
+                todoList.appendChild(todoItem);
+            }, 300);
+        }
     }
 
     function deleteItem(element) {
@@ -400,26 +473,27 @@
         todoItem.classList.add('deleting');
         setTimeout(() => {
             todoItem.remove();
-        }, 200);
+        }, 300);
     }
 
     function addNewItem() {
         const list = document.getElementById('todo-list');
-        const newItemHTML = `
-            <div class="todo-item">
-                <div class="item-actions-left">
-                    <button class="icon-btn drag-icon">
-                        <svg viewBox="0 0 24 24"><path d="M4 9h16M4 15h16" fill="none"/></svg>
-                    </button>
-                    <div class="check-icon" onclick="toggleCheck(this)"></div>
-                </div>
-                <div class="item-content">新的待辦事項</div>
-                <button class="icon-btn delete-btn" onclick="deleteItem(this)">
-                    <svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12" fill="none"/></svg>
+        const div = document.createElement('div');
+        div.className = 'todo-item';
+        div.draggable = true;
+        div.innerHTML = `
+            <div class="item-actions-left">
+                <button class="icon-btn drag-icon drag-handle">
+                    <svg viewBox="0 0 24 24"><path d="M4 9h16M4 15h16" fill="none"/></svg>
                 </button>
+                <div class="check-icon" onclick="toggleCheck(this)"></div>
             </div>
+            <div class="item-content">新的待辦事項</div>
+            <button class="icon-btn delete-btn" onclick="deleteItem(this)">
+                <svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12" fill="none"/></svg>
+            </button>
         `;
-        list.insertAdjacentHTML('beforeend', newItemHTML);
+        list.appendChild(div);
     }
 </script>
 
