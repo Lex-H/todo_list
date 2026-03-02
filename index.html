@@ -13,10 +13,10 @@
             --text-main: #f0f0f0;
             --text-muted: #a0a0a0;
             --accent-gold: #dfb36b;
-            --gradient-start: #f47983;
-            --gradient-end: #f5c469;
             --border-color: #333;
             --hover-bg: #2a2525;
+            --nav-width-collapsed: 80px;
+            --nav-width-expanded: 240px;
         }
 
         * {
@@ -37,7 +37,6 @@
             overflow: hidden;
         }
 
-        /* 響應式核心容器 */
         .app-container {
             width: 100%;
             height: 100vh;
@@ -47,7 +46,6 @@
             transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
         }
 
-        /* --- 電腦版 RWD 設計 --- */
         @media (min-width: 1024px) {
             .app-container {
                 width: 90vw;
@@ -57,45 +55,47 @@
                 border: 1px solid var(--border-color);
                 box-shadow: 0 30px 60px rgba(0,0,0,0.8);
                 overflow: hidden;
-            }
-
-            .sidebar {
-                display: flex !important;
-            }
-
-            .main-content {
-                border-left: 1px solid var(--border-color);
+                flex-direction: row;
             }
         }
 
-        /* 左側導覽欄 (僅電腦版) */
-        .sidebar {
-            width: 280px;
+        /* 右側導覽欄 */
+        .nav-side {
+            width: var(--nav-width-collapsed);
             background-color: var(--sidebar-bg);
             display: none;
             flex-direction: column;
-            padding: 40px 24px;
+            padding: 20px 15px; /* 縮減頂部間距讓按鈕到頂部 */
+            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border-left: 1px solid var(--border-color);
+            overflow: hidden;
+            align-items: center;
         }
 
-        .sidebar-logo {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            font-size: 22px;
-            font-weight: 800;
-            color: var(--accent-gold);
-            margin-bottom: 50px;
-            letter-spacing: 1px;
+        .nav-side.expanded {
+            width: var(--nav-width-expanded);
+            align-items: flex-start;
+            padding: 20px 24px;
+        }
+
+        @media (min-width: 1024px) {
+            .nav-side {
+                display: flex !important;
+                order: 2;
+            }
         }
 
         .nav-menu {
             list-style: none;
             flex: 1;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
         }
 
         .nav-item {
-            padding: 12px 16px;
-            margin-bottom: 8px;
+            padding: 12px;
             border-radius: 12px;
             cursor: pointer;
             transition: 0.3s;
@@ -103,6 +103,11 @@
             align-items: center;
             gap: 12px;
             color: var(--text-muted);
+            white-space: nowrap;
+        }
+
+        .nav-side.expanded .nav-item {
+            padding: 12px 16px;
         }
 
         .nav-item.active, .nav-item:hover {
@@ -111,11 +116,24 @@
         }
 
         .nav-item svg {
-            width: 20px;
-            height: 20px;
+            width: 24px;
+            height: 24px;
             stroke: currentColor;
             fill: none;
             stroke-width: 2;
+            flex-shrink: 0;
+        }
+
+        .nav-text {
+            opacity: 0;
+            width: 0;
+            transition: opacity 0.2s, width 0.2s;
+            overflow: hidden;
+        }
+
+        .nav-side.expanded .nav-text {
+            opacity: 1;
+            width: auto;
         }
 
         /* 右側主區域 */
@@ -125,6 +143,7 @@
             flex-direction: column;
             background-color: var(--bg-color);
             position: relative;
+            order: 1;
         }
 
         header {
@@ -135,20 +154,44 @@
             flex-shrink: 0;
         }
 
+        .header-left {
+            display: flex;
+            align-items: flex-start; /* 讓日期在下方排列 */
+            gap: 16px;
+        }
+
+        .title-container {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .title-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
         .header-title {
             font-size: 28px;
             font-weight: 700;
+            line-height: 1.2;
         }
 
-        .header-title span {
-            display: block;
+        .header-subtitle {
             font-size: 14px;
             color: var(--text-muted);
             font-weight: 400;
             margin-top: 4px;
         }
 
-        /* 桌面端輸入框 */
+        .title-icon {
+            color: var(--accent-gold);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 34px; /* 對齊標題高度 */
+        }
+
         .input-section {
             padding: 0 40px 20px;
             display: none;
@@ -184,7 +227,6 @@
             outline: none;
         }
 
-        /* 任務列表區域 */
         main {
             flex: 1;
             overflow-y: auto;
@@ -289,7 +331,6 @@
             .todo-item:hover .delete-action { opacity: 1; }
         }
 
-        /* 頁尾底部導航 (手機版) */
         footer {
             height: 80px;
             background: var(--nav-bg);
@@ -316,7 +357,6 @@
             .mobile-only { display: none !important; }
         }
 
-        /* 手機版導覽按鈕樣式 */
         .nav-action-btn {
             background: transparent;
             border: 2px solid var(--accent-gold);
@@ -331,35 +371,6 @@
             transition: 0.2s;
         }
 
-        .nav-action-btn:active {
-            background: rgba(223, 179, 107, 0.2);
-            transform: scale(0.9);
-        }
-
-        .center-arrows {
-            display: flex;
-            gap: 20px;
-            align-items: center;
-        }
-
-        .arrow-btn {
-            background: none;
-            border: none;
-            cursor: pointer;
-            padding: 10px;
-        }
-
-        .arrow-btn svg {
-            stroke: var(--text-muted);
-            transition: 0.2s;
-        }
-
-        .arrow-btn:active svg {
-            stroke: var(--accent-gold);
-            transform: scale(1.2);
-        }
-
-        /* 電腦版的新增按鈕樣式 */
         .btn-pc-add {
             background: var(--accent-gold);
             border: none;
@@ -370,12 +381,7 @@
             cursor: pointer;
             transition: 0.3s;
         }
-        
-        .btn-pc-add:hover {
-            filter: brightness(1.1);
-        }
 
-        /* 頭像 */
         .avatar {
             width: 50px;
             height: 50px;
@@ -392,44 +398,47 @@
 <body>
 
 <div class="app-container">
-    <!-- 左側側邊欄 (桌面端顯現) -->
-    <aside class="sidebar">
-        <div class="sidebar-logo">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                <path d="M20 6L9 17l-5-5"/>
-            </svg>
-        </div>
+    <!-- 右側導覽欄 (按鈕全部往上) -->
+    <aside class="nav-side" id="nav-side">
         <nav class="nav-menu">
-            <div class="nav-item active">
-                <svg viewBox="0 0 24 24"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
-                全部任務
+            <div class="nav-item" onclick="toggleNav()">
+                <svg viewBox="0 0 24 24"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg>
+                <span class="nav-text">設定</span>
             </div>
             <div class="nav-item">
                 <svg viewBox="0 0 24 24"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                近期提醒
+                <span class="nav-text">近期提醒</span>
             </div>
             <div class="nav-item">
                 <svg viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2v16z"/></svg>
-                收藏項目
+                <span class="nav-text">收藏項目</span>
             </div>
         </nav>
-        <div style="margin-top: auto;">
+        <div style="margin-top: auto; padding-bottom: 10px;">
             <img src="assets/avatar.png" class="avatar" alt="User">
         </div>
     </aside>
 
-    <!-- 右側主內容 -->
+    <!-- 左側主內容 -->
     <div class="main-content">
         <header>
-            <div class="header-title">
-                星願清單
-                <span id="date-string"><!-- 動態載入日期 --></span>
+            <div class="header-left">
+                <!-- 打勾在清單標題正左邊 -->
+                <div class="title-icon">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                        <path d="M20 6L9 17l-5-5"/>
+                    </svg>
+                </div>
+                <div class="title-container">
+                    <div class="title-row">
+                        <div class="header-title">星願清單</div>
+                    </div>
+                    <div class="header-subtitle" id="date-string"></div>
+                </div>
             </div>
-            <!-- 手機版才顯示的頭像 -->
             <img src="assets/avatar.png" class="avatar mobile-only" alt="User">
         </header>
 
-        <!-- 電腦版輸入框 -->
         <section class="input-section">
             <div class="input-group">
                 <input type="text" id="pc-todo-input" placeholder="新增一個任務... (按 Enter 確認)">
@@ -439,11 +448,10 @@
 
         <main id="main-scroll">
             <div class="todo-list" id="todo-list">
-                <!-- 預設項目 -->
                 <div class="todo-item" draggable="true">
                     <span class="drag-handle">⋮⋮</span>
                     <div class="check-box" onclick="toggleCheck(this)"></div>
-                    <div class="item-text">歡迎使用星願清單，點擊左下角+號按鈕新增項目</div>
+                    <div class="item-text">歡迎使用星願清單，點擊右下角+號按鈕新增項目</div>
                     <div class="delete-action" onclick="deleteItem(this)">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ff5555" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
                     </div>
@@ -451,30 +459,12 @@
             </div>
         </main>
 
-        <!-- 手機版底部導航列 -->
         <footer class="mobile-only">
-            <!-- 左側按鈕：新增 -->
             <button class="nav-action-btn" onclick="addNewItem()">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                     <path d="M12 5v14M5 12h14"/>
                 </svg>
             </button>
-
-            <!-- 中間按鈕：左右切換 (示意) -->
-            <div class="center-arrows">
-                <button class="arrow-btn">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                        <path d="M15 18l-6-6 6-6"/>
-                    </svg>
-                </button>
-                <button class="arrow-btn">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                        <path d="M9 18l6-6-6-6"/>
-                    </svg>
-                </button>
-            </div>
-
-            <!-- 右側按鈕：選單 -->
             <button class="nav-action-btn">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                     <path d="M4 6h16M4 12h16M4 18h16"/>
@@ -487,8 +477,12 @@
 <script>
     const todoList = document.getElementById('todo-list');
     const pcInput = document.getElementById('pc-todo-input');
+    const navSide = document.getElementById('nav-side');
 
-    // --- 1. 動態日期顯示 ---
+    function toggleNav() {
+        navSide.classList.toggle('expanded');
+    }
+
     function updateDate() {
         const now = new Date();
         const options = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' };
@@ -496,7 +490,6 @@
     }
     updateDate();
 
-    // --- 2. 任務邏輯 ---
     pcInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter' && pcInput.value.trim() !== "") {
             addFromPC();
@@ -548,19 +541,15 @@
         if (text) createItem(text);
     }
 
-    // --- 3. 拖曳功能 ---
     let draggingElement = null;
-
     todoList.addEventListener('dragstart', (e) => {
         draggingElement = e.target.closest('.todo-item');
         draggingElement.classList.add('dragging');
     });
-
     todoList.addEventListener('dragend', (e) => {
         if(draggingElement) draggingElement.classList.remove('dragging');
         draggingElement = null;
     });
-
     todoList.addEventListener('dragover', (e) => {
         e.preventDefault();
         const afterElement = getDragAfterElement(todoList, e.clientY);
@@ -568,33 +557,6 @@
             todoList.appendChild(draggingElement);
         } else {
             todoList.insertBefore(draggingElement, afterElement);
-        }
-    });
-
-    // 手機端模擬拖曳
-    todoList.addEventListener('touchstart', (e) => {
-        const handle = e.target.closest('.drag-handle');
-        if (!handle) return;
-        draggingElement = handle.closest('.todo-item');
-        draggingElement.classList.add('dragging');
-    }, { passive: false });
-
-    todoList.addEventListener('touchmove', (e) => {
-        if (!draggingElement) return;
-        e.preventDefault();
-        const touch = e.touches[0];
-        const afterElement = getDragAfterElement(todoList, touch.clientY);
-        if (afterElement == null) {
-            todoList.appendChild(draggingElement);
-        } else {
-            todoList.insertBefore(draggingElement, afterElement);
-        }
-    }, { passive: false });
-
-    todoList.addEventListener('touchend', () => {
-        if (draggingElement) {
-            draggingElement.classList.remove('dragging');
-            draggingElement = null;
         }
     });
 
