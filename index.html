@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>星願清單</title>
+    <title>星願清單 - StarWish</title>
     <style>
         :root {
             --bg-color: #0f0e0e;
@@ -15,8 +15,7 @@
             --accent-gold: #dfb36b;
             --border-color: #333;
             --hover-bg: #2a2525;
-            --nav-width-collapsed: 80px;
-            --nav-width-expanded: 240px;
+            --danger: #ff5555;
         }
 
         * {
@@ -31,257 +30,27 @@
             background-color: var(--bg-color);
             color: var(--text-main);
             height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
             overflow: hidden;
         }
 
-        .app-container {
-            width: 100%;
-            height: 100vh;
-            display: flex;
-            background-color: var(--bg-color);
-            position: relative;
-            transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
-        }
+        /* --- 響應式切換邏輯 --- */
+        #desktop-app { display: none; }
+        #mobile-app { display: flex; }
 
         @media (min-width: 1024px) {
-            .app-container {
-                width: 90vw;
-                height: 85vh;
-                max-width: 1200px;
-                border-radius: 24px;
-                border: 1px solid var(--border-color);
-                box-shadow: 0 30px 60px rgba(0,0,0,0.8);
-                overflow: hidden;
-                flex-direction: row;
-            }
+            #desktop-app { display: flex; }
+            #mobile-app { display: none !important; }
         }
 
-        /* 右側導覽欄 */
-        .nav-side {
-            width: var(--nav-width-collapsed);
-            background-color: var(--sidebar-bg);
-            display: none;
-            flex-direction: column;
-            padding: 20px 15px; /* 縮減頂部間距讓按鈕到頂部 */
-            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            border-left: 1px solid var(--border-color);
-            overflow: hidden;
-            align-items: center;
+        /* --- 通用元件樣式 --- */
+        .avatar {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            border: 2px solid var(--accent-gold);
+            object-fit: cover;
+            background: #333;
         }
-
-        .nav-side.expanded {
-            width: var(--nav-width-expanded);
-            align-items: flex-start;
-            padding: 20px 24px;
-        }
-
-        @media (min-width: 1024px) {
-            .nav-side {
-                display: flex !important;
-                order: 2;
-            }
-        }
-
-        .nav-menu {
-            list-style: none;
-            flex: 1;
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .nav-item {
-            padding: 12px;
-            border-radius: 12px;
-            cursor: pointer;
-            transition: 0.3s;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            color: var(--text-muted);
-            white-space: nowrap;
-        }
-
-        .nav-side.expanded .nav-item {
-            padding: 12px 16px;
-        }
-
-        .nav-item.active, .nav-item:hover {
-            background-color: var(--hover-bg);
-            color: var(--text-main);
-        }
-
-        .nav-item svg {
-            width: 24px;
-            height: 24px;
-            stroke: currentColor;
-            fill: none;
-            stroke-width: 2;
-            flex-shrink: 0;
-        }
-
-        .nav-text {
-            opacity: 0;
-            width: 0;
-            transition: opacity 0.2s, width 0.2s;
-            overflow: hidden;
-        }
-
-        .nav-side.expanded .nav-text {
-            opacity: 1;
-            width: auto;
-        }
-
-        /* 右側主區域 */
-        .main-content {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            background-color: var(--bg-color);
-            position: relative;
-            order: 1;
-        }
-
-        header {
-            padding: 30px 40px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-shrink: 0;
-        }
-
-        .header-left {
-            display: flex;
-            align-items: flex-start; /* 讓日期在下方排列 */
-            gap: 16px;
-        }
-
-        .title-container {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .title-row {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .header-title {
-            font-size: 28px;
-            font-weight: 700;
-            line-height: 1.2;
-        }
-
-        .header-subtitle {
-            font-size: 14px;
-            color: var(--text-muted);
-            font-weight: 400;
-            margin-top: 4px;
-        }
-
-        .title-icon {
-            color: var(--accent-gold);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 34px; /* 對齊標題高度 */
-        }
-
-        .input-section {
-            padding: 0 40px 20px;
-            display: none;
-        }
-
-        @media (min-width: 1024px) {
-            .input-section {
-                display: block;
-            }
-        }
-
-        .input-group {
-            display: flex;
-            background: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 8px 16px;
-            gap: 12px;
-            transition: 0.3s;
-        }
-
-        .input-group:focus-within {
-            border-color: var(--accent-gold);
-            box-shadow: 0 0 10px rgba(223, 179, 107, 0.2);
-        }
-
-        .input-group input {
-            flex: 1;
-            background: none;
-            border: none;
-            color: white;
-            font-size: 16px;
-            outline: none;
-        }
-
-        main {
-            flex: 1;
-            overflow-y: auto;
-            padding: 10px 40px 100px;
-            scrollbar-width: thin;
-            scrollbar-color: var(--border-color) transparent;
-        }
-
-        @media (max-width: 768px) {
-            main { padding: 15px 15px 100px; }
-            header { padding: 20px; }
-        }
-
-        .todo-list {
-            display: flex;
-            flex-direction: column;
-            gap: 14px;
-        }
-
-        .todo-item {
-            background-color: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 16px;
-            padding: 18px 24px;
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            user-select: none;
-        }
-
-        .todo-item:hover {
-            transform: translateY(-2px);
-            border-color: #444;
-            background-color: var(--hover-bg);
-        }
-
-        .todo-item.dragging {
-            opacity: 0.6;
-            transform: scale(0.98);
-            border: 2px dashed var(--accent-gold);
-        }
-
-        .todo-item.completed {
-            opacity: 0.7;
-        }
-
-        .drag-handle {
-            cursor: grab;
-            opacity: 0.5;
-            transition: 0.2s;
-            padding: 5px;
-        }
-
-        .drag-handle:hover { opacity: 1; color: var(--accent-gold); }
 
         .check-box {
             width: 24px;
@@ -308,56 +77,150 @@
             font-size: 14px;
         }
 
-        .item-text {
-            flex: 1;
-            font-size: 16px;
-            color: var(--text-main);
-        }
-
         .todo-item.completed .item-text {
             text-decoration: line-through;
             color: var(--text-muted);
         }
 
-        .delete-action {
-            opacity: 0.5;
-            transition: 0.2s;
+        /* =========================================
+           電腦版樣式 (Desktop - 第二組風格)
+           ========================================= */
+        #desktop-app {
+            width: 100%;
+            height: 100vh;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .pc-container {
+            width: 90vw;
+            height: 85vh;
+            max-width: 1200px;
+            background-color: var(--bg-color);
+            border-radius: 24px;
+            border: 1px solid var(--border-color);
+            display: flex;
+            overflow: hidden;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.8);
+        }
+
+        .pc-sidebar {
+            width: 80px;
+            background-color: var(--sidebar-bg);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 30px 0;
+            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .pc-sidebar:hover { width: 240px; }
+
+        .pc-nav-menu {
+            flex: 1;
+            width: 100%;
+            padding: 0 15px;
+        }
+
+        .pc-nav-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 12px;
+            color: var(--text-muted);
+            border-radius: 12px;
             cursor: pointer;
-            padding: 5px;
+            margin-bottom: 8px;
+            white-space: nowrap;
+            overflow: hidden;
         }
 
-        @media (min-width: 1024px) {
-            .delete-action { opacity: 0; }
-            .todo-item:hover .delete-action { opacity: 1; }
+        .pc-nav-item:hover { background: var(--hover-bg); color: #fff; }
+
+        .pc-nav-item svg { width: 24px; height: 24px; stroke: currentColor; fill: none; stroke-width: 2; flex-shrink: 0; }
+
+        .pc-main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
         }
 
-        footer {
+        .pc-header {
+            padding: 30px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .pc-input-area {
+            padding: 0 40px 20px;
+        }
+
+        .pc-input-group {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 8px 16px;
+            display: flex;
+            gap: 12px;
+        }
+
+        .pc-input-group input {
+            flex: 1;
+            background: none;
+            border: none;
+            color: #fff;
+            outline: none;
+            font-size: 16px;
+        }
+
+        .pc-add-btn {
+            background: var(--accent-gold);
+            border: none;
+            padding: 8px 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        /* =========================================
+           手機版樣式 (Mobile - 第一組風格)
+           ========================================= */
+        #mobile-app {
+            width: 100%;
+            height: 100vh;
+            flex-direction: column;
+        }
+
+        .mobile-header {
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--bg-color);
+        }
+
+        .mobile-content {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            padding-bottom: 100px;
+        }
+
+        .mobile-footer {
             height: 80px;
             background: var(--nav-bg);
             border-top: 1px solid #4a3438;
             display: flex;
             justify-content: space-around;
             align-items: center;
-            padding: 0 10px;
-            position: absolute;
+            position: fixed;
             bottom: 0;
             width: 100%;
-            z-index: 100;
         }
 
-        @media (min-width: 1024px) {
-            footer {
-                position: static;
-                background: transparent;
-                border: none;
-                height: 60px;
-                padding: 0 40px 20px;
-                justify-content: flex-end;
-            }
-            .mobile-only { display: none !important; }
-        }
-
-        .nav-action-btn {
+        .mobile-action-btn {
             background: transparent;
             border: 2px solid var(--accent-gold);
             color: var(--accent-gold);
@@ -367,211 +230,201 @@
             display: flex;
             align-items: center;
             justify-content: center;
+        }
+
+        /* --- 列表項目共通樣式（微調） --- */
+        .todo-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .todo-item {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            padding: 16px 20px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            transition: 0.3s;
+        }
+
+        .item-text { flex: 1; font-size: 16px; }
+
+        .delete-btn {
+            color: var(--danger);
             cursor: pointer;
+            opacity: 0.6;
             transition: 0.2s;
         }
 
-        .btn-pc-add {
-            background: var(--accent-gold);
-            border: none;
-            padding: 8px 16px;
-            border-radius: 8px;
-            color: #000;
-            font-weight: bold;
-            cursor: pointer;
-            transition: 0.3s;
+        .delete-btn:hover { opacity: 1; }
+
+        /* 隱藏捲軸 */
+        #main-scroll-pc::-webkit-scrollbar, .mobile-content::-webkit-scrollbar {
+            width: 6px;
         }
-
-        .avatar {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            border: 2px solid var(--accent-gold);
-            cursor: pointer;
-            transition: 0.3s;
+        #main-scroll-pc::-webkit-scrollbar-thumb, .mobile-content::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 10px;
         }
-
-        .avatar:hover { transform: rotate(10deg) scale(1.1); }
-
     </style>
 </head>
 <body>
 
-<div class="app-container">
-    <!-- 右側導覽欄 (按鈕全部往上) -->
-    <aside class="nav-side" id="nav-side">
-        <nav class="nav-menu">
-            <div class="nav-item" onclick="toggleNav()">
-                <svg viewBox="0 0 24 24"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg>
-                <span class="nav-text">設定</span>
-            </div>
-            <div class="nav-item">
-                <svg viewBox="0 0 24 24"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                <span class="nav-text">近期提醒</span>
-            </div>
-            <div class="nav-item">
-                <svg viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2v16z"/></svg>
-                <span class="nav-text">收藏項目</span>
-            </div>
-        </nav>
-        <div style="margin-top: auto; padding-bottom: 10px;">
-            <img src="assets/avatar.png" class="avatar" alt="User">
-        </div>
-    </aside>
-
-    <!-- 左側主內容 -->
-    <div class="main-content">
-        <header>
-            <div class="header-left">
-                <!-- 打勾在清單標題正左邊 -->
-                <div class="title-icon">
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                        <path d="M20 6L9 17l-5-5"/>
-                    </svg>
+<!-- 電腦版佈局 -->
+<div id="desktop-app">
+    <div class="pc-container">
+        <aside class="pc-sidebar">
+            <nav class="pc-nav-menu">
+                <div class="pc-nav-item">
+                    <svg viewBox="0 0 24 24"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    <span>近期提醒</span>
                 </div>
-                <div class="title-container">
-                    <div class="title-row">
-                        <div class="header-title">星願清單</div>
-                    </div>
-                    <div class="header-subtitle" id="date-string"></div>
+                <div class="pc-nav-item">
+                    <svg viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2v16z"/></svg>
+                    <span>收藏項目</span>
                 </div>
-            </div>
-            <img src="assets/avatar.png" class="avatar mobile-only" alt="User">
-        </header>
-
-        <section class="input-section">
-            <div class="input-group">
-                <input type="text" id="pc-todo-input" placeholder="新增一個任務... (按 Enter 確認)">
-                <button class="btn-pc-add" onclick="addFromPC()">新增</button>
-            </div>
-        </section>
-
-        <main id="main-scroll">
-            <div class="todo-list" id="todo-list">
-                <div class="todo-item" draggable="true">
-                    <span class="drag-handle">⋮⋮</span>
-                    <div class="check-box" onclick="toggleCheck(this)"></div>
-                    <div class="item-text">歡迎使用星願清單，點擊右下角+號按鈕新增項目</div>
-                    <div class="delete-action" onclick="deleteItem(this)">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ff5555" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
-                    </div>
+                <div class="pc-nav-item">
+                    <svg viewBox="0 0 24 24"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg>
+                    <span>系統設定</span>
                 </div>
+            </nav>
+            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" class="avatar" alt="User">
+        </aside>
+
+        <main class="pc-main">
+            <header class="pc-header">
+                <div>
+                    <h1 style="font-size: 28px; display: flex; align-items: center; gap: 10px;">
+                        <span style="color: var(--accent-gold);">✓</span> 星願清單
+                    </h1>
+                    <p id="pc-date" style="color: var(--text-muted); margin-top: 5px;"></p>
+                </div>
+            </header>
+
+            <section class="pc-input-area">
+                <div class="pc-input-group">
+                    <input type="text" id="pc-input" placeholder="新增一個願望任務... (Enter 確認)">
+                    <button class="pc-add-btn" onclick="addTask('pc')">新增</button>
+                </div>
+            </section>
+
+            <div id="main-scroll-pc" style="flex: 1; overflow-y: auto; padding: 0 40px 40px;">
+                <div class="todo-list" id="todo-list-pc"></div>
             </div>
         </main>
-
-        <footer class="mobile-only">
-            <button class="nav-action-btn" onclick="addNewItem()">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                    <path d="M12 5v14M5 12h14"/>
-                </svg>
-            </button>
-            <button class="nav-action-btn">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                    <path d="M4 6h16M4 12h16M4 18h16"/>
-                </svg>
-            </button>
-        </footer>
     </div>
 </div>
 
-<script>
-    const todoList = document.getElementById('todo-list');
-    const pcInput = document.getElementById('pc-todo-input');
-    const navSide = document.getElementById('nav-side');
+<!-- 手機版佈局 -->
+<div id="mobile-app">
+    <header class="mobile-header">
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <span style="color: var(--accent-gold); font-size: 24px; font-weight: bold;">✓</span>
+            <div>
+                <h2 style="font-size: 20px;">星願清單</h2>
+                <p id="mobile-date" style="font-size: 12px; color: var(--text-muted);"></p>
+            </div>
+        </div>
+        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" class="avatar" alt="User">
+    </header>
 
-    function toggleNav() {
-        navSide.classList.toggle('expanded');
+    <main class="mobile-content">
+        <div class="todo-list" id="todo-list-mobile"></div>
+    </main>
+
+    <footer class="mobile-footer">
+        <button class="mobile-action-btn" onclick="promptMobileAdd()">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+        </button>
+        <button class="mobile-action-btn">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+        </button>
+    </footer>
+</div>
+
+<script>
+    // --- 資料引擎 ---
+    let tasks = JSON.parse(localStorage.getItem('starwish_tasks')) || [
+        { id: 1, text: "歡迎使用星願清單！", completed: false },
+        { id: 2, text: "點擊方框完成任務，點擊垃圾桶刪除", completed: true }
+    ];
+
+    function saveTasks() {
+        localStorage.setItem('starwish_tasks', JSON.stringify(tasks));
+        renderAll();
     }
 
-    function updateDate() {
+    // --- 渲染邏輯 ---
+    function renderAll() {
+        const pcList = document.getElementById('todo-list-pc');
+        const mobileList = document.getElementById('todo-list-mobile');
+        
+        const html = tasks.map(task => `
+            <div class="todo-item ${task.completed ? 'completed' : ''}" data-id="${task.id}">
+                <div class="check-box" onclick="toggleTask(${task.id})"></div>
+                <div class="item-text">${task.text}</div>
+                <div class="delete-btn" onclick="deleteTask(${task.id})">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                </div>
+            </div>
+        `).join('');
+
+        pcList.innerHTML = html;
+        mobileList.innerHTML = html;
+    }
+
+    // --- 操作邏輯 ---
+    function addTask(source) {
+        const input = document.getElementById('pc-input');
+        const text = input.value.trim();
+        if (text) {
+            tasks.unshift({ id: Date.now(), text: text, completed: false });
+            input.value = "";
+            saveTasks();
+        }
+    }
+
+    function promptMobileAdd() {
+        const text = prompt("想要許下什麼願望？");
+        if (text && text.trim()) {
+            tasks.unshift({ id: Date.now(), text: text.trim(), completed: false });
+            saveTasks();
+        }
+    }
+
+    function toggleTask(id) {
+        tasks = tasks.map(t => t.id === id ? { ...t, completed: !t.completed } : t);
+        // 優化體驗：如果是完成，將其移到最後
+        tasks.sort((a, b) => a.completed - b.completed);
+        saveTasks();
+    }
+
+    function deleteTask(id) {
+        tasks = tasks.filter(t => t.id !== id);
+        saveTasks();
+    }
+
+    // --- 初始化 ---
+    function init() {
         const now = new Date();
         const options = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' };
-        document.getElementById('date-string').innerText = now.toLocaleDateString('zh-TW', options);
-    }
-    updateDate();
+        const dateStr = now.toLocaleDateString('zh-TW', options);
+        
+        document.getElementById('pc-date').innerText = dateStr;
+        document.getElementById('mobile-date').innerText = dateStr;
 
-    pcInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter' && pcInput.value.trim() !== "") {
-            addFromPC();
-        }
-    });
+        // PC 入口監聽 Enter
+        document.getElementById('pc-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') addTask('pc');
+        });
 
-    function addFromPC() {
-        const text = pcInput.value.trim();
-        if (text) {
-            createItem(text);
-            pcInput.value = "";
-        }
+        renderAll();
     }
 
-    function createItem(text) {
-        const div = document.createElement('div');
-        div.className = 'todo-item';
-        div.draggable = true;
-        div.innerHTML = `
-            <span class="drag-handle">⋮⋮</span>
-            <div class="check-box" onclick="toggleCheck(this)"></div>
-            <div class="item-text">${text}</div>
-            <div class="delete-action" onclick="deleteItem(this)">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ff5555" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
-            </div>
-        `;
-        todoList.prepend(div);
-    }
-
-    function toggleCheck(btn) {
-        const item = btn.closest('.todo-item');
-        item.classList.toggle('completed');
-        if (item.classList.contains('completed')) {
-            setTimeout(() => {
-                todoList.appendChild(item);
-            }, 400);
-        }
-    }
-
-    function deleteItem(btn) {
-        const item = btn.closest('.todo-item');
-        item.style.opacity = '0';
-        item.style.transform = 'scale(0.8)';
-        setTimeout(() => item.remove(), 300);
-    }
-
-    function addNewItem() {
-        const text = prompt("請輸入新任務：");
-        if (text) createItem(text);
-    }
-
-    let draggingElement = null;
-    todoList.addEventListener('dragstart', (e) => {
-        draggingElement = e.target.closest('.todo-item');
-        draggingElement.classList.add('dragging');
-    });
-    todoList.addEventListener('dragend', (e) => {
-        if(draggingElement) draggingElement.classList.remove('dragging');
-        draggingElement = null;
-    });
-    todoList.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        const afterElement = getDragAfterElement(todoList, e.clientY);
-        if (afterElement == null) {
-            todoList.appendChild(draggingElement);
-        } else {
-            todoList.insertBefore(draggingElement, afterElement);
-        }
-    });
-
-    function getDragAfterElement(container, y) {
-        const draggableElements = [...container.querySelectorAll('.todo-item:not(.dragging)')];
-        return draggableElements.reduce((closest, child) => {
-            const box = child.getBoundingClientRect();
-            const offset = y - box.top - box.height / 2;
-            if (offset < 0 && offset > closest.offset) {
-                return { offset: offset, element: child };
-            } else {
-                return closest;
-            }
-        }, { offset: Number.NEGATIVE_INFINITY }).element;
-    }
+    window.onload = init;
 </script>
 </body>
 </html>
