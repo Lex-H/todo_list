@@ -178,6 +178,7 @@ function beginEdit(row, todo) {
     activeEditInput = input;
     const text = row.querySelector('.item-text');
     text.replaceWith(input);
+    let enterTimer = null;
     const finish = save => {
         if (!input.isConnected) return;
         const value = input.value.trim();
@@ -204,15 +205,49 @@ function beginEdit(row, todo) {
         input.replaceWith(updatedText);
     };
     input.addEventListener('keydown', event => {
-        if (event.key === 'Enter') { event.preventDefault(); finish(true); }
-        if (event.key === 'Escape') finish(false);
+        // Ignore held-key repeats and Enter used by an IME to confirm a candidate.
+        if (event.repeat || event.isComposing || event.keyCode === 229) return;
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            if (enterTimer !== null) {
+                window.clearTimeout(enterTimer);
+                enterTimer = null;
+                const listContainer = row.parentElement;
+                const orderedTodos = [...todos].sort((a, b) => Number(a.completed) - Number(b.completed));
+                const currentIndex = orderedTodos.findIndex(item => String(item.id) === String(todo.id));
+                // Move to the very next row, including an empty task row.
+                const nextTodoId = orderedTodos[currentIndex + 1]?.id;
+                finish(true);
+                if (nextTodoId !== undefined) {
+                    const nextId = String(nextTodoId);
+                    const target = listContainer.querySelector(`.todo-item[data-id="${CSS.escape(nextId)}"]`);
+                    const targetTodo = todos.find(item => String(item.id) === nextId);
+                    if (target && targetTodo) beginEdit(target, targetTodo);
+                }
+            } else {
+                // Give a second quick Enter a chance to move two rows down.
+                enterTimer = window.setTimeout(() => {
+                    enterTimer = null;
+                    finish(true);
+                }, 500);
+            }
+        }
+        if (event.key === 'Escape') {
+            if (enterTimer !== null) window.clearTimeout(enterTimer);
+            enterTimer = null;
+            finish(false);
+        }
     });
     // Let the click on another item's text run before rerendering the list.
     // Otherwise blur replaces the clicked element before its click handler can
     // open that item's editor.
-    input.addEventListener('blur', () => window.setTimeout(() => finish(true), 0), { once: true });
+    input.addEventListener('blur', () => {
+        if (enterTimer !== null) window.clearTimeout(enterTimer);
+        enterTimer = null;
+        window.setTimeout(() => finish(true), 0);
+    }, { once: true });
     input.focus();
-    input.select();
+    input.setSelectionRange(input.value.length, input.value.length);
 }
 
 function addBlankTodo() {
@@ -272,11 +307,13 @@ const chatMessages = document.querySelector('[data-chat-messages]');
 const chatStatus = document.querySelector('[data-chat-status]');
 const recordButton = document.querySelector('[data-record]');
 const retryVoiceButton = document.querySelector('[data-retry-voice]');
+const stopVoiceButton = document.querySelector('[data-stop-voice]');
 let mediaRecorder = null;
 let recordingStream = null;
 let recordingChunks = [];
 let lastReplyText = '';
 let currentAudioUrl = null;
+let currentAudio = null;
 let chatBusy = false;
 
 function showSettings() {
@@ -368,6 +405,9 @@ async function askGemini(blob) {
     return reply;
 }
 async function speakReply(text) {
+    currentAudio?.pause();
+    currentAudio = null;
+    stopVoiceButton.hidden = true;
     const key = localStorage.getItem(API_KEY_STORAGE);
     setChatStatus('正在準備語音…');
     retryVoiceButton.hidden = true;
@@ -384,8 +424,15 @@ async function speakReply(text) {
         const audioBytes = Uint8Array.from(atob(audioData), char => char.charCodeAt(0));
         currentAudioUrl = URL.createObjectURL(new Blob([audioBytes], { type: 'audio/wav' }));
         const audio = new Audio(currentAudioUrl);
+        currentAudio = audio;
+        audio.addEventListener('ended', () => {
+            if (currentAudio !== audio) return;
+            currentAudio = null;
+            stopVoiceButton.hidden = true;
+            setChatStatus('語音播放完成。');
+        }, { once: true });
         await audio.play();
-        audio.addEventListener('ended', () => setChatStatus('語音播放完成。'), { once: true });
+        stopVoiceButton.hidden = false;
         setChatStatus('正在播放語音…');
     } catch (error) {
         setChatStatus(`文字已保留；語音生成失敗：${error.message}`);
@@ -458,6 +505,14 @@ document.querySelector('[data-close-chat]').addEventListener('click', () => {
     chatDialog.close();
 });
 retryVoiceButton.addEventListener('click', () => { if (lastReplyText) speakReply(lastReplyText); });
+stopVoiceButton.addEventListener('click', () => {
+    if (!currentAudio) return;
+    currentAudio.pause();
+    currentAudio.currentTime = 0;
+    currentAudio = null;
+    stopVoiceButton.hidden = true;
+    setChatStatus('已停止語音播放。');
+});
 
 const dateText = new Intl.DateTimeFormat('zh-TW', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' }).format(new Date());
 document.querySelectorAll('.date-string').forEach(element => { element.textContent = dateText; });

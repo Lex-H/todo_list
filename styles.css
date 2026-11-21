@@ -108,6 +108,7 @@ button.pc-nav-item { cursor: pointer; }
 .chat-bubble.user { align-self: flex-end; border-bottom-right-radius: 5px; background: #37394b; }
 .chat-bubble.assistant { align-self: flex-start; border: 1px solid #555970; border-bottom-left-radius: 5px; background: #252738; }
 .chat-controls { display: flex; flex-direction: column; align-items: center; gap: 10px; padding-top: 8px; }
+.voice-actions { display: flex; justify-content: center; gap: 10px; }
 .voice-avatar-control { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 0; border: 0; background: transparent; color: var(--text-muted); font-size: 13px; cursor: pointer; }
 .voice-avatar-control img { width: 74px; height: 74px; border: 3px solid var(--accent-gold); border-radius: 50%; object-fit: cover; transition: box-shadow .2s, transform .2s; }
 .voice-avatar-control:hover img { transform: scale(1.04); }
