@@ -66,6 +66,40 @@ function makeButton(className, label, symbol) {
     return button;
 }
 
+function caretOffsetAtPoint(element, clientX, clientY) {
+    const text = element.textContent ?? '';
+    const segmenter = typeof Intl.Segmenter === 'function'
+        ? new Intl.Segmenter(undefined, { granularity: 'grapheme' })
+        : null;
+    let fallbackOffset = 0;
+    const segments = segmenter
+        ? [...segmenter.segment(text)].map(part => ({ segment: part.segment, index: part.index }))
+        : Array.from(text, segment => {
+            const part = { segment, index: fallbackOffset };
+            fallbackOffset += segment.length;
+            return part;
+        });
+    const range = document.createRange();
+    let closest = { score: Infinity, offset: text.length };
+
+    for (const { segment, index } of segments) {
+        range.setStart(element.firstChild, index);
+        range.setEnd(element.firstChild, index + segment.length);
+        for (const rect of range.getClientRects()) {
+            const verticalDistance = clientY < rect.top ? rect.top - clientY : clientY > rect.bottom ? clientY - rect.bottom : 0;
+            const horizontalDistance = clientX < rect.left ? rect.left - clientX : clientX > rect.right ? clientX - rect.right : 0;
+            const score = verticalDistance * 1000 + horizontalDistance;
+            if (score < closest.score) {
+                closest = {
+                    score,
+                    offset: clientX < rect.left + rect.width / 2 ? index : index + segment.length
+                };
+            }
+        }
+    }
+    return closest.offset;
+}
+
 function renderList() {
     const sorted = [...todos].sort((a, b) => Number(a.completed) - Number(b.completed));
     listContainers.forEach(container => {
@@ -99,7 +133,12 @@ function renderList() {
             text.className = 'item-text';
             text.textContent = todo.text;
             text.title = '點擊編輯任務';
-            text.addEventListener('click', () => beginEdit(row, todo));
+            text.addEventListener('click', event => {
+                const caret = event.detail === 0
+                    ? todo.text.length
+                    : caretOffsetAtPoint(text, event.clientX, event.clientY);
+                beginEdit(row, todo, caret);
+            });
 
             const deleteButton = makeButton('task-action delete-action', `刪除「${todo.text}」`, '×');
             deleteButton.addEventListener('click', () => deleteTodo(row, todo.id));
@@ -168,7 +207,7 @@ function enableReordering(handle, row, todo) {
     document.addEventListener('pointercancel', finishDrag);
 }
 
-function beginEdit(row, todo) {
+function beginEdit(row, todo, caretOffset = todo.text.length) {
     if (row.querySelector('.edit-input')) return;
     const input = document.createElement('input');
     input.className = 'edit-input';
@@ -178,7 +217,6 @@ function beginEdit(row, todo) {
     activeEditInput = input;
     const text = row.querySelector('.item-text');
     text.replaceWith(input);
-    let enterTimer = null;
     const finish = save => {
         if (!input.isConnected) return;
         const value = input.value.trim();
@@ -205,49 +243,23 @@ function beginEdit(row, todo) {
         input.replaceWith(updatedText);
     };
     input.addEventListener('keydown', event => {
-        // Ignore held-key repeats and Enter used by an IME to confirm a candidate.
+        // Let the IME handle Enter while Chinese text is still being composed.
         if (event.repeat || event.isComposing || event.keyCode === 229) return;
         if (event.key === 'Enter') {
             event.preventDefault();
-            if (enterTimer !== null) {
-                window.clearTimeout(enterTimer);
-                enterTimer = null;
-                const listContainer = row.parentElement;
-                const orderedTodos = [...todos].sort((a, b) => Number(a.completed) - Number(b.completed));
-                const currentIndex = orderedTodos.findIndex(item => String(item.id) === String(todo.id));
-                // Move to the very next row, including an empty task row.
-                const nextTodoId = orderedTodos[currentIndex + 1]?.id;
-                finish(true);
-                if (nextTodoId !== undefined) {
-                    const nextId = String(nextTodoId);
-                    const target = listContainer.querySelector(`.todo-item[data-id="${CSS.escape(nextId)}"]`);
-                    const targetTodo = todos.find(item => String(item.id) === nextId);
-                    if (target && targetTodo) beginEdit(target, targetTodo);
-                }
-            } else {
-                // Give a second quick Enter a chance to move two rows down.
-                enterTimer = window.setTimeout(() => {
-                    enterTimer = null;
-                    finish(true);
-                }, 500);
-            }
+            const listContainer = row.parentElement;
+            finish(true);
+            addBlankTodoAfter(todo.id, listContainer);
         }
-        if (event.key === 'Escape') {
-            if (enterTimer !== null) window.clearTimeout(enterTimer);
-            enterTimer = null;
-            finish(false);
-        }
+        if (event.key === 'Escape') finish(false);
     });
     // Let the click on another item's text run before rerendering the list.
     // Otherwise blur replaces the clicked element before its click handler can
     // open that item's editor.
-    input.addEventListener('blur', () => {
-        if (enterTimer !== null) window.clearTimeout(enterTimer);
-        enterTimer = null;
-        window.setTimeout(() => finish(true), 0);
-    }, { once: true });
+    input.addEventListener('blur', () => window.setTimeout(() => finish(true), 0), { once: true });
     input.focus();
-    input.setSelectionRange(input.value.length, input.value.length);
+    const caret = Math.max(0, Math.min(caretOffset, input.value.length));
+    input.setSelectionRange(caret, caret);
 }
 
 function addBlankTodo() {
@@ -258,6 +270,25 @@ function addBlankTodo() {
     renderList();
     const row = document.querySelector(`#mobile-ui [data-id="${CSS.escape(String(todo.id))}"]`);
     if (row) beginEdit(row, todo);
+}
+
+function addBlankTodoAfter(todoId, listContainer) {
+    const currentIndex = todos.findIndex(item => String(item.id) === String(todoId));
+    const currentTodo = todos[currentIndex];
+    if (!currentTodo) return;
+
+    const blankTodo = {
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        text: '',
+        completed: currentTodo.completed
+    };
+    recordUndo();
+    todos.splice(currentIndex + 1, 0, blankTodo);
+    persistTodos();
+    renderList();
+
+    const row = listContainer.querySelector(`.todo-item[data-id="${CSS.escape(String(blankTodo.id))}"]`);
+    if (row) beginEdit(row, blankTodo);
 }
 
 function addTodo(text) {
@@ -388,7 +419,7 @@ async function askGemini(blob) {
         throw new Error('請先在設定填入 Gemini API Key。');
     }
     const todosSnapshot = todos.map(todo => ({ text: todo.text, completed: todo.completed }));
-    const prompt = `你是星願清單裡親切、可愛又有幫助的女生夥伴。請用使用者說話的語言，簡潔自然地回答錄音中的問題。以下是使用者目前全部代辦事項（completed=true 代表已完成）：\n${JSON.stringify(todosSnapshot)}\n把清單當作回答背景，不要自行聲稱已修改事項。`;
+    const prompt = `你是星願清單APP裡親切、可愛又有幫助的女生夥伴，你的名字叫星瞳，今年20歲，是一個可愛、甜美、性感的女大學生，臉蛋漂亮身材好，喜歡跟朋友去逛街、喝下午茶。請用跟朋友對話的方式，簡潔自然地回答錄音中的內容。以下是使用者目前全部代辦事項（completed=true 代表已完成）：\n${JSON.stringify(todosSnapshot)}\n把清單當作回答背景，不要自行聲稱已修改事項。`;
     const audioBase64 = await base64FromBlob(blob);
     const recordedMime = (blob.type || 'audio/webm').split(';')[0].toLowerCase();
     const audioMime = recordedMime === 'audio/mp4' ? 'audio/aac' : recordedMime;
