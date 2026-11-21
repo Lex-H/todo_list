@@ -60,10 +60,11 @@
         <label class="field-label" for="api-key-input">Gemini API Key</label>
         <div class="key-field"><input id="api-key-input" type="password" autocomplete="off" placeholder="輸入 API Key"><button type="button" class="secondary-button" data-toggle-key>顯示</button></div>
         <div class="dialog-actions"><button type="button" class="secondary-button" data-clear-key>清除</button><button type="button" class="primary-button" data-save-key>儲存</button></div>
+        <div class="dialog-actions settings-data-actions"><button type="button" class="secondary-button" data-clear-chat>清除過去對話</button><button type="button" class="secondary-button" data-delete-all-todos>刪除所有待辦事項</button></div>
         <p class="dialog-hint" data-settings-status role="status"></p>
     </dialog>
     <dialog class="app-dialog chat-dialog" data-chat-dialog>
-        <div class="dialog-top"><div class="chat-title"><img src="assets/avatar.png" alt=""><div><h2>和星願夥伴聊聊</h2><p data-chat-status role="status">點擊下方按鈕開始錄音</p></div></div><button type="button" class="dialog-close" data-close-chat aria-label="關閉">×</button></div>
+        <div class="dialog-top"><div class="chat-title"><img src="assets/avatar.png" alt=""><div><h2>和星瞳聊聊</h2><p data-chat-status role="status">點擊下方按鈕開始錄音</p></div></div><button type="button" class="dialog-close" data-close-chat aria-label="關閉">×</button></div>
         <div class="chat-messages" data-chat-messages aria-live="polite"><p class="chat-empty">點右下方頭像開始說話，再點一次送出。</p></div>
         <div class="chat-controls"><button type="button" class="voice-avatar-control" data-record aria-label="開始錄音"><img src="assets/avatar.png" alt=""><span>點擊頭像開始錄音</span></button><div class="voice-actions"><button type="button" class="secondary-button" data-stop-voice hidden>停止語音</button><button type="button" class="secondary-button" data-retry-voice hidden>重試語音</button></div></div>
     </dialog>
